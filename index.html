@@ -109,17 +109,6 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
   display: flex;
   flex-direction: column;
   background-color: var(--hero);
-  background-image:
-    linear-gradient(to bottom,
-      rgba(42, 11, 33, 0.6) 0%,
-      rgba(42, 11, 33, 0.12) 22%,
-      rgba(42, 11, 33, 0.2) 40%,
-      rgba(42, 11, 33, 0.78) 66%,
-      rgba(42, 11, 33, 0.94) 100%),
-    var(--hero-photo, none);
-  background-size: cover;
-  background-position: center 15%;
-  background-repeat: no-repeat;
   color: #FBEFF2;
 }
 .hero::before {
@@ -128,6 +117,7 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
   inset: 16px;
   border: 1px solid rgba(227, 184, 101, 0.4);
   pointer-events: none;
+  z-index: 2;
 }
 .hero-nav {
   display: flex;
@@ -168,6 +158,87 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
 @keyframes draw { from { stroke-dashoffset: 289; } }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 
+/* Header slideshow (shared by both pages) */
+.hero-slides, .hero-scrim { position: absolute; inset: 0; }
+.hero-slides { z-index: 0; overflow: hidden; }
+.hero-scrim {
+  z-index: 1;
+  background: linear-gradient(to bottom,
+    rgba(42, 11, 33, 0.6) 0%,
+    rgba(42, 11, 33, 0.12) 22%,
+    rgba(42, 11, 33, 0.2) 40%,
+    rgba(42, 11, 33, 0.78) 66%,
+    rgba(42, 11, 33, 0.94) 100%);
+}
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  background-image: var(--hero-photo, none);
+  background-size: cover;
+  background-repeat: no-repeat;
+  transform-origin: var(--ox, 50%) var(--oy, 30%);
+  will-change: transform, opacity;
+}
+.slide.is-active { opacity: 1; }
+.slide.is-active, .slide.is-leaving { animation: drift 9s ease-out both; }
+.slide-1 { background-position: center 15%; --ox: 50%; --oy: 25%; --s0: 1; --s1: 1.12; }
+.slide-2 { background-position: center 6%; --ox: 58%; --oy: 22%; --s0: 1.3; --s1: 1.5; }
+.slide-3 { background-position: center 42%; --ox: 40%; --oy: 50%; --s0: 1.12; --s1: 1.3; }
+@keyframes drift { from { transform: scale(var(--s0)); } to { transform: scale(var(--s1)); } }
+.is-paused .slide { animation-play-state: paused; }
+.hero-nav, .hero-body, .head-body { position: relative; z-index: 3; }
+.hero-ctrl {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 1.4rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.hero-ctrl .dot {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.hero-ctrl .dot::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 999px;
+  background: rgba(251, 239, 242, 0.55);
+  transition: width 0.3s ease, margin 0.3s ease, background-color 0.3s ease;
+}
+.hero-ctrl .dot[aria-current="true"]::before { width: 24px; margin-left: -12px; background: #E3B865; }
+.hero-ctrl .pp {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-left: 0.5rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(251, 239, 242, 0.45);
+  background: rgba(42, 11, 33, 0.4);
+  color: #FBEFF2;
+  cursor: pointer;
+}
+.hero-ctrl .pp svg { width: 12px; height: 12px; fill: currentColor; }
+.hero-ctrl .pp .i-play { display: none; }
+.hero-ctrl .pp.paused .i-play { display: block; }
+.hero-ctrl .pp.paused .i-pause { display: none; }
+
 /* Products */
 .section-head {
   display: flex;
@@ -192,6 +263,9 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
 }
 .arrow:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .arrow:disabled { opacity: 0.35; cursor: default; }
+.arrow .i-play { display: none; }
+.arrow.paused .i-play { display: block; }
+.arrow.paused .i-pause { display: none; }
 .rail {
   list-style: none;
   margin: 0;
@@ -200,12 +274,11 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
   justify-content: safe center;
   gap: 1.25rem;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--gutter);
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent) transparent;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
 }
-.product { flex: 0 0 min(76vw, 320px); scroll-snap-align: start; }
+.rail::-webkit-scrollbar { display: none; }
+.product { flex: 0 0 min(76vw, 320px); }
 .tile {
   margin: 0;
   aspect-ratio: 1 / 1;
@@ -285,6 +358,25 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
 .site-footer p { margin: 0.9rem 0 0; color: #C9AEBB; max-width: 32ch; }
 .site-footer a { text-decoration: none; }
 .site-footer a:hover { text-decoration: underline; }
+.site-footer .social { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+.site-footer .social li { margin: 0; }
+.site-footer .social a {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid rgba(243, 228, 234, 0.3);
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.site-footer .social a:hover {
+  background: #E3B865;
+  border-color: #E3B865;
+  color: #2A0B21;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+.site-footer .social svg { width: 22px; height: 22px; fill: currentColor; }
 .footer-note {
   margin-top: 2.5rem;
   padding-top: 1.25rem;
@@ -321,6 +413,12 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
 <body>
 
 <header class="hero" id="top">
+  <div class="hero-slides" data-slides aria-hidden="true">
+    <div class="slide slide-1 is-active"></div>
+    <div class="slide slide-2"></div>
+    <div class="slide slide-3"></div>
+  </div>
+  <div class="hero-scrim" aria-hidden="true"></div>
   <nav class="hero-nav" aria-label="Main">
     <a href="#products">Products</a>
     <a href="catalog.html">Catalog</a>
@@ -345,6 +443,15 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
       <a class="btn btn-ghost" href="#services">Our services</a>
     </div>
   </div>
+  <div class="hero-ctrl" role="group" aria-label="Header photo slideshow">
+    <button type="button" class="dot" aria-label="Show photo 1" aria-current="true"></button>
+    <button type="button" class="dot" aria-label="Show photo 2"></button>
+    <button type="button" class="dot" aria-label="Show photo 3"></button>
+    <button type="button" class="pp" aria-label="Pause slideshow">
+      <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1.2"/><rect x="14" y="4" width="5" height="16" rx="1.2"/></svg>
+      <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.6v14.8a1 1 0 0 0 1.5.85l12-7.4a1 1 0 0 0 0-1.7l-12-7.4A1 1 0 0 0 7 4.6z"/></svg>
+    </button>
+  </div>
 </header>
 
 <main>
@@ -359,6 +466,10 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
         <div class="arrows" id="arrows">
           <button class="arrow" id="prev" type="button" aria-label="Previous products">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
+          <button class="arrow" id="toggle" type="button" aria-label="Pause auto-scroll">
+            <svg class="i-pause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            <svg class="i-play" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10-6.5a1 1 0 0 0 0-1.72l-10-6.5A1 1 0 0 0 8 5.5z"/></svg>
           </button>
           <button class="arrow" id="next" type="button" aria-label="Next products">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
@@ -495,12 +606,12 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
       </div>
       <div>
         <h3>Follow us</h3>
-        <ul>
-          <li><a href="https://www.facebook.com/share/1CHX9QJ22P/" target="_blank" rel="noopener noreferrer">Facebook</a></li>
-          <li><a href="https://www.instagram.com/myrab_eauty" target="_blank" rel="noopener noreferrer">Instagram @myrab_eauty</a></li>
-          <li><a href="https://www.tiktok.com/@angel.dmyra" target="_blank" rel="noopener noreferrer">TikTok @angel.dmyra</a></li>
-          <li><a href="https://www.tiktok.com/@sharleenrapchgetrude" target="_blank" rel="noopener noreferrer">TikTok @sharleenrapchgetrude</a></li>
-          <li><a href="https://wa.me/254724050035" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
+        <ul class="social">
+          <li><a href="https://www.facebook.com/share/1CHX9QJ22P/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></a></li>
+          <li><a href="https://www.instagram.com/myrab_eauty" target="_blank" rel="noopener noreferrer" aria-label="Instagram @myrab_eauty" title="Instagram @myrab_eauty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.3"/></svg></a></li>
+          <li><a href="https://www.tiktok.com/@angel.dmyra" target="_blank" rel="noopener noreferrer" aria-label="TikTok @angel.dmyra" title="TikTok @angel.dmyra"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></a></li>
+          <li><a href="https://www.tiktok.com/@sharleenrapchgetrude" target="_blank" rel="noopener noreferrer" aria-label="TikTok @sharleenrapchgetrude" title="TikTok @sharleenrapchgetrude"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></a></li>
+          <li><a href="https://wa.me/254724050035" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" title="WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a></li>
         </ul>
       </div>
     </div>
@@ -513,27 +624,151 @@ h3 { font-family: var(--display); font-weight: 500; margin: 0; }
   var rail = document.getElementById('rail');
   var prev = document.getElementById('prev');
   var next = document.getElementById('next');
-  var arrows = document.getElementById('arrows');
+  var toggle = document.getElementById('toggle');
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function step() {
-    var item = rail.querySelector('li');
-    var gap = parseFloat(getComputedStyle(rail).columnGap) || 20;
-    return item.getBoundingClientRect().width + gap;
+  var SPEED = 36;   // pixels per second
+  var IDLE = 2500;  // ms to leave the row alone after a touch or a tap on the arrows
+  var originals = Array.prototype.slice.call(rail.children);
+  var setW = 0, pos = 0, last = 0, userUntil = 0;
+  var running = !reduce, hoverHold = false, focusHold = false, inView = true;
+
+  function clone(el) {
+    var c = el.cloneNode(true);
+    c.setAttribute('data-clone', '1');
+    c.setAttribute('aria-hidden', 'true');
+    return c;
   }
-  function update() {
-    arrows.hidden = rail.scrollWidth <= rail.clientWidth + 4;
-    prev.disabled = rail.scrollLeft <= 4;
-    next.disabled = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 4;
+
+  // Repeat the products before and after the originals so the row can loop forever.
+  function build() {
+    Array.prototype.slice.call(rail.querySelectorAll('[data-clone]')).forEach(function (n) { n.remove(); });
+    var gap = parseFloat(getComputedStyle(rail).columnGap) || 20;
+    var first = originals[0];
+    var lastEl = originals[originals.length - 1];
+    setW = lastEl.offsetLeft + lastEl.offsetWidth + gap - first.offsetLeft;
+    var after = Math.ceil((rail.clientWidth + setW) / setW) + 1;
+    var i, j;
+    for (i = 0; i < originals.length; i++) rail.insertBefore(clone(originals[i]), first);
+    for (j = 0; j < after; j++) {
+      for (i = 0; i < originals.length; i++) rail.appendChild(clone(originals[i]));
+    }
+    pos = setW;
+    rail.scrollLeft = pos;
+  }
+
+  function wrap() {
+    if (pos >= 2 * setW) pos -= setW;
+    else if (pos <= 0) pos += setW;
+  }
+
+  function tick(t) {
+    var dt = last ? Math.min((t - last) / 1000, 0.05) : 0;
+    last = t;
+    if (running && inView && !hoverHold && !focusHold && t > userUntil) {
+      pos += SPEED * dt;
+      wrap();
+      rail.scrollLeft = pos;
+    } else {
+      pos = rail.scrollLeft;
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Keep manual swiping seamless as well.
+  rail.addEventListener('scroll', function () {
+    var x = rail.scrollLeft;
+    if (x >= 2 * setW) rail.scrollLeft = x - setW;
+    else if (x <= 0) rail.scrollLeft = x + setW;
+  }, { passive: true });
+
+  function touched() { userUntil = performance.now() + IDLE; }
+  ['touchstart', 'touchmove', 'touchend', 'wheel', 'pointerdown', 'keydown'].forEach(function (ev) {
+    rail.addEventListener(ev, touched, { passive: true });
+  });
+  rail.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') hoverHold = true; });
+  rail.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') hoverHold = false; });
+  rail.addEventListener('focusin', function () { if (rail.matches(':focus-visible')) focusHold = true; });
+  rail.addEventListener('focusout', function () { focusHold = false; });
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) { inView = entries[0].isIntersecting; }).observe(rail);
+  }
+
+  function step() {
+    var gap = parseFloat(getComputedStyle(rail).columnGap) || 20;
+    return originals[0].offsetWidth + gap;
   }
   function go(dir) {
+    touched();
     rail.scrollBy({ left: dir * step(), behavior: reduce ? 'auto' : 'smooth' });
   }
   prev.addEventListener('click', function () { go(-1); });
   next.addEventListener('click', function () { go(1); });
-  rail.addEventListener('scroll', update, { passive: true });
-  window.addEventListener('resize', update);
-  update();
+
+  function render() {
+    toggle.classList.toggle('paused', !running);
+    toggle.setAttribute('aria-label', running ? 'Pause auto-scroll' : 'Play auto-scroll');
+  }
+  toggle.addEventListener('click', function () { running = !running; render(); });
+
+  var timer;
+  window.addEventListener('resize', function () {
+    clearTimeout(timer);
+    timer = setTimeout(build, 200);
+  });
+  window.addEventListener('load', build);
+
+  build();
+  render();
+  requestAnimationFrame(tick);
+})();
+</script>
+<script>
+(function () {
+  var box = document.querySelector('[data-slides]');
+  if (!box) return;
+  var slides = box.querySelectorAll('.slide');
+  var dots = document.querySelectorAll('.hero-ctrl .dot');
+  var pp = document.querySelector('.hero-ctrl .pp');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var DELAY = 6500;
+  var i = 0, timer = 0, running = !reduce, inView = true;
+
+  function show(n) {
+    if (n === i) return;
+    var old = slides[i];
+    old.classList.remove('is-active');
+    old.classList.add('is-leaving');
+    setTimeout(function () { old.classList.remove('is-leaving'); }, 1600);
+    i = n;
+    slides[i].classList.remove('is-leaving');
+    slides[i].classList.add('is-active');
+    for (var k = 0; k < dots.length; k++) {
+      if (k === i) dots[k].setAttribute('aria-current', 'true');
+      else dots[k].removeAttribute('aria-current');
+    }
+  }
+  function live() { return running && inView && !document.hidden; }
+  function start() {
+    clearInterval(timer);
+    box.classList.toggle('is-paused', !live());
+    if (live()) timer = setInterval(function () { show((i + 1) % slides.length); }, DELAY);
+  }
+  function render() {
+    pp.classList.toggle('paused', !running);
+    pp.setAttribute('aria-label', running ? 'Pause slideshow' : 'Play slideshow');
+  }
+
+  Array.prototype.forEach.call(dots, function (d, n) {
+    d.addEventListener('click', function () { show(n); start(); });
+  });
+  pp.addEventListener('click', function () { running = !running; render(); start(); });
+  document.addEventListener('visibilitychange', start);
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) { inView = entries[0].isIntersecting; start(); }).observe(box.parentElement);
+  }
+  render();
+  start();
 })();
 </script>
 </body>
